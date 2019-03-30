@@ -14,13 +14,13 @@ use work.MIPS_LIB.all;
 -- UPDATES
 -- 3/29/2019	: Component initialization. 
 
--- TODO: Remove hardcoded X"0000" in case IN_WIDTH is not 32 bits
 -- TODO: Complete the Jump Register (ALU_JR) instruction
+-- TODO: Does ALU have anything to do for _MFHI and _MFLO?
 
 entity ALU is
 	generic (
-		WIDTH : positive := 32;
-		IN_WIDTH : positive := 32
+		WIDTH 		: positive := 32;
+		IN_WIDTH 	: positive := 32
 	);
 	port (
 		a 			: in std_logic_vector( IN_WIDTH-1 downto 0 );  -- rs
@@ -39,12 +39,14 @@ architecture BHV of ALU is
 	signal branch_taken_sig : std_logic;
 begin
 	
-	process( op_select, ir_shift, a, b, result_sig )
+	process( op_select, ir_shift, a, b )
 		variable OP_SELECT_VAR 	: integer; -- just to make decoding pretty :)
 		variable IR_SHIFT_VAR 	: integer;
 		variable SIGN_BIT		: std_logic;
 		variable SIGNED_A		: signed(IN_WIDTH-1 downto 0);
 		variable SIGNED_B		: signed(IN_WIDTH-1 downto 0);
+		variable UNSIGNED_A_64	: unsigned(2*IN_WIDTH-1 downto 0);
+		variable UNSIGNED_B_64 	: unsigned(2*IN_WIDTH-1 downto 0);
 	begin
 		
 		-- MUX SELECT PREPARATION
@@ -52,6 +54,8 @@ begin
 		IR_SHIFT_VAR 	:= to_integer(unsigned(IR_SHIFT));
 		SIGNED_A 		:= signed(a);
 		SIGNED_B 		:= signed(b);
+		UNSIGNED_A_64	:= resize(unsigned(a), UNSIGNED_A_64'length);
+		UNSIGNED_B_64	:= resize(unsigned(b), UNSIGNED_B_64'length);
 		
 		-- DEFAULT SIGNAL VALUES
 		branch_taken_sig 	<= '0';
@@ -62,49 +66,49 @@ begin
 			
 		when ALU_ADD =>		-- add unsigned bits
 			-- rd <- rs + rt
-			result_sig <= X"0000" & std_logic_vector( unsigned(a) + unsigned(b) );
+			result_sig <= std_logic_vector( unsigned(UNSIGNED_A_64) + unsigned(UNSIGNED_B_64) );
 			
 		when ALU_SUB =>		-- subtract unsigned bits
 			-- rd <- rs - rt
-			result_sig <= X"0000" & std_logic_vector( unsigned(a) - unsigned(b) );
+			result_sig <= std_logic_vector( unsigned(UNSIGNED_A_64) - unsigned(UNSIGNED_B_64) );
 			
 		when ALU_MULT =>	-- signed multiply
+			-- (LO, HI) <- rs x rt
+			result_sig <= std_logic_vector( signed(a) * signed(b) );
+			
+		when ALU_MULTU =>	-- unsigned multiply
 			-- (LO, HI) <- rs x rt
 			result_sig <= std_logic_vector( unsigned(a) * unsigned(b) );
 	
 		when ALU_AND =>		-- bitwise and
 			-- rd <- rs AND rt
-			result_sig <= X"0000" & (a and b);
+			result_sig <= std_logic_vector(UNSIGNED_A_64 and UNSIGNED_B_64);
 			
 		when ALU_OR =>		-- bitwise or
 			-- rd <- rs OR rt
-			result_sig <= X"0000" & (a or b);
+			result_sig <= std_logic_vector(UNSIGNED_A_64 or UNSIGNED_B_64);
 			
 		when ALU_XOR =>		-- bitwise exclusive or
 			-- rd <- rs XOR rt
-			result_sig <= X"0000" & (a xor b);
+			result_sig <= std_logic_vector(UNSIGNED_A_64 xor UNSIGNED_B_64);
 			
 		when ALU_SRL =>		-- shift right logical
 			-- rd <- rt >> sa
-			result_sig <= X"0000" & b;
-			result_sig <= std_logic_vector(shift_right(unsigned(result_sig), IR_SHIFT_VAR));
+			result_sig <= std_logic_vector(shift_right(UNSIGNED_B_64, IR_SHIFT_VAR));
 			
 		when ALU_SLL =>		-- shift left logical
 			-- rd <- rt << sa
-			result_sig <= X"0000" & b;
-			result_sig <= std_logic_vector(shift_left(unsigned(result_sig), IR_SHIFT_VAR));
+			result_sig <= std_logic_vector(shift_left(UNSIGNED_B_64, IR_SHIFT_VAR));
 			
 		when ALU_SRA =>		-- shift right arithmetic
 			-- rd <- rt >> sa
 			sign_bit := b(IN_WIDTH-1); -- top bit is the sign bit for a signed number
-			result_sig <= X"0000" & b;
-			result_sig <= std_logic_vector(shift_right(unsigned(result_sig), IR_SHIFT_VAR));
+			result_sig <= std_logic_vector(shift_right(UNSIGNED_B_64, IR_SHIFT_VAR));
 			result_sig(IN_WIDTH-1) <= sign_bit; -- duplicate the sign bit
 			
 		when ALU_SLT =>		-- set if less than signed
 			-- rd <- rs < rt	
 			if ( signed_a < signed_b ) then
-				branch_taken_sig <= '1';
 				result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
 			else 
 				result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
@@ -112,27 +116,18 @@ begin
 				
 		when ALU_SLTU =>	-- set if less than unsigned
 			if ( unsigned(a) < unsigned(b) ) then
-				branch_taken_sig <= '1';
 				result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
 			else 
 				result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 			end if;
 			
-		when ALU_MFHI =>	-- move hi reg
-			-- rd <- HI
-			result_sig <= (others => '1'); -- doesn't matter
-			
-		when ALU_MFLO =>	-- move lo reg
-			-- rd <- LO
-			result_sig <= (others => '1'); -- doesn't matter
-			
 		when ALU_LW =>		-- load word
 			-- rd <- mem[base + offset] stored in rt
-			result_sig <= X"0000" & b;
+			result_sig <= std_logic_vector(UNSIGNED_B_64);
 			
 		when ALU_SW =>		-- store word
 			-- mem[base + offset] <- rt
-			result_sig <= X"0000" & b;
+			result_sig <= std_logic_vector(UNSIGNED_B_64);
 			
 		when ALU_BEQ =>		-- break if A equals B
 			-- if rs = rt, branch
@@ -140,9 +135,6 @@ begin
 			-- if result = 1, branch.
 			if ( unsigned(a) = unsigned(b) ) then
 				branch_taken_sig <= '1';
-				result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
-			else
-				result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 			end if;
 			
 		when ALU_BNE =>		-- break if A does not equal B
@@ -151,9 +143,6 @@ begin
 			-- if result = 1, branch.
 			if ( unsigned(a) /= unsigned(b) ) then
 				branch_taken_sig <= '1';
-				result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
-			else
-				result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 			end if;
 			
 		when ALU_BLEZ =>	-- break if less than equal to 0
@@ -162,9 +151,6 @@ begin
 			-- if result = 1, branch.
 			if ( signed_a <= to_signed(0, WIDTH) ) then
 				branch_taken_sig <= '1';
-				result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
-			else
-				result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 			end if;
 			
 		when ALU_BGTZ =>	-- break if greater than 0
@@ -173,9 +159,6 @@ begin
 			-- if result = 1, branch.
 			if ( signed_a > to_signed(0, WIDTH) ) then
 				branch_taken_sig <= '1';
-				result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
-			else
-				result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 			end if;
 			
 		when ALU_BCOMPZ =>	-- compare to 0
@@ -186,24 +169,20 @@ begin
 				-- branch on less than 0
 				if ( signed_b < to_signed(0, WIDTH) ) then
 					branch_taken_sig <= '1';
-					result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
-				else
-					result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 				end if;
 								
 			else -- if b = 1
 				-- branch on greater than or equal to 0
 				if ( signed_b >= to_signed(1, WIDTH) ) then
 					branch_taken_sig <= '1';
-					result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
-				else
-					result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 				end if;
 			end if;
 			
 		when ALU_JR =>		-- jump register
+			branch_taken_sig <= '1';
 			
 		when ALU_HALT =>	-- fake instruction
+			-- nop
 		
 		when others => null;
 		end case;
