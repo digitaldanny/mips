@@ -40,8 +40,8 @@ begin
 		
 		-- DEFAULT SIGNAL ASSIGNMENTS
 		alu_lo_hi_sig <= std_logic_vector(to_unsigned(ALU_OUT_MUX_ALU,2)); -- ALU OUT
-		lo_en_sig <= '1';
-		hi_en_sig <= '1';
+		lo_en_sig <= '1';  -- these should always be able to update except for specific cases
+		hi_en_sig <= '1';  -- these should always be able to update except for specific cases
 		
 		case OP_CODE is
 		when "000000" =>	-- 0x00, r type instructions (15)
@@ -100,7 +100,6 @@ begin
 				op_select_sig <= std_logic_vector(to_unsigned(ALU_JR, 6));
 				
 			when others => null;
-				
 			end case;
 			
 		when "000001" => 	-- 0x01, branch instructions (2)
@@ -190,12 +189,11 @@ begin
 			op_select_sig <= std_logic_vector(to_unsigned(ALU_HALT, 6));
 			
 		when others => null;
-		
 		end case;
 		
 	end process;
 	
-	-- COMBIN. LOGIC ---------------------------------------------------
+	-- SIGNAL TO PORT CONNECTIONS ---------------------------------------
 	op_select	<= op_select_sig;
 	hi_en	    <= hi_en_sig;
 	lo_en	    <= lo_en_sig;	 
