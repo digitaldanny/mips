@@ -34,7 +34,6 @@ architecture STR of MIPS_DATAPATH is
 	signal ir_shift 	: std_logic_vector( 4 downto 0 );		-- number of times to shift, bits IR(10 downto 6)
 	signal branch_taken : std_logic;
 	signal result 		: std_logic_vector( WIDTH-1 downto 0 );
-	signal result_hi	: std_logic_vector( WIDTH-1 downto 0 );
 	
 	--------- ALU + ALU CONTROLLER SIGNALS --------
 	signal op_select 	: std_logic_vector(5 downto 0);
@@ -59,8 +58,7 @@ begin
 			ir_shift     => ir_shift,
 			op_select    => op_select,
 			branch_taken => branch_taken,
-			result       => result,
-			result_hi	 => result_hi
+			result       => result
 		);
 		
 	U_ALU_CONTROLLER : entity work.ALU_CONTROLLER
