@@ -1,0 +1,6 @@
+sims/
+quartus/
+*.mti
+*.mpf
+*.wlf
+*.flock
