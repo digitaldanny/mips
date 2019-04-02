@@ -1,0 +1,13 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = bin;
+% Program RAM Data %			
+
+Content
+  Begin
+00 : 00001010000010100000101000001010	;
+01 : 11110000111100001111000011110000	;
+
+
+End;
