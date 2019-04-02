@@ -7,10 +7,11 @@ use ieee.numeric_std.all;
 
 -- Author		: Daniel Hamilton
 -- Creation 	: 3/29/2019
--- Last Edit 	: 3/29/2019
+-- Last Edit 	: 4/1/2019
 
 -- UPDATES
 -- 3/29/2019	: Component initialization. 
+-- 4/1/2019		: Linked datapath to memory block and register file
 
 entity MIPS_DATAPATH is
 	generic (
@@ -82,8 +83,37 @@ architecture STR of MIPS_DATAPATH is
 	signal mux_alu_out_sel : std_logic_vector(1 downto 0);
 	signal mux_alu_out_out : std_logic_vector(WIDTH-1 downto 0);
 	
+	------------- REGISTER FILE SIGNALS ------------
+	signal rd_addr0 : std_logic_vector(3 downto 0);
+	signal rd_addr1 : std_logic_vector(3 downto 0);
+	signal wr_addr  : std_logic_vector(3 downto 0);
+	signal wr_en    : std_logic;
+	signal wr_data  : std_logic_vector(7 downto 0);     
+	signal rd_data0 : std_logic_vector(7 downto 0);    -- connects to reg a inputs
+	signal rd_data1 : std_logic_vector(7 downto 0);    -- connects to reg b inputs
+	signal JumpAndLink : std_logic;
+	
+	-------------- INSTRUCTION REGISTER ------------
+	signal ir_write 	: std_logic;
+	signal data 	    : std_logic_vector(WIDTH-1 downto 0);
+	signal out_25_0 	: std_logic_vector(25 downto 0);
+	signal out_31_26 	: std_logic_vector(31 downto 26);
+	signal out_25_21 	: std_logic_vector(25 downto 21);
+	signal out_20_16	: std_logic_vector(20 downto 16);
+	signal out_15_11	: std_logic_vector(15 downto 11);
+	signal out_15_0	    : std_logic_vector(15 downto 0);
+	
 begin
 	
+	--==================== COMPONENT CONNECTIONS =====================
+	
+	-- Register File Connections
+	reg_a_in <= rd_data0;
+	reg_b_in <= rd_data1;
+	
+	-- Instruction Register Connections
+	
+	--========================= STRUCTURAL ===========================
 	U_ALU : entity work.ALU
 		generic map( 
 			IN_WIDTH => WIDTH,
@@ -115,6 +145,7 @@ begin
 		port map(
 			clk    => clk,
 			rst    => rst,
+			en     => '1',
 			input  => reg_a_in,
 			output => reg_a_out
 		);
@@ -126,6 +157,7 @@ begin
 		port map(
 			clk    => clk,
 			rst    => rst,
+			en     => '1',
 			input  => reg_b_in,
 			output => reg_b_out
 		);
@@ -137,6 +169,7 @@ begin
 		port map(
 			clk    => clk,
 			rst    => rst,
+			en 	   => '1',
 			input  => result(WIDTH-1 downto 0),
 			output => reg_alu_out
 		);
@@ -148,6 +181,7 @@ begin
 		port map(
 			clk    => clk,
 			rst    => rst,
+			en     => lo_en,
 			input  => result(WIDTH-1 downto 0),
 			output => reg_lo_out
 		);
@@ -159,6 +193,7 @@ begin
 		port map(
 			clk    => clk,
 			rst    => rst,
+			en 	   => hi_en,
 			input  => result(2*WIDTH-1 downto WIDTH),
 			output => reg_hi_out
 		);
