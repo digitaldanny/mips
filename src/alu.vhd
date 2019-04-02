@@ -14,7 +14,6 @@ use work.MIPS_LIB.all;
 -- UPDATES
 -- 3/29/2019	: Component initialization. 
 
--- TODO: Complete the Jump Register (ALU_JR) instruction
 -- TODO: Does ALU have anything to do for _MFHI and _MFLO?
 
 entity ALU is
@@ -24,7 +23,7 @@ entity ALU is
 	);
 	port (
 		a 			: in std_logic_vector( IN_WIDTH-1 downto 0 );  -- rs
-		b 			: in std_logic_vector( IN_WIDTH-1 downto 0 );	-- rt
+		b 			: in std_logic_vector( IN_WIDTH-1 downto 0 );  -- rt
 		ir_shift 	: in std_logic_vector( 4 downto 0 );		-- number of times to shift, bits IR(10 downto 6)
 		op_select 	: in std_logic_vector( 5 downto 0 );		-- op code select from the ALU controller
 	
