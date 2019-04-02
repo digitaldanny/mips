@@ -1,0 +1,56 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = hex;
+% Program RAM Data %
+Content
+  Begin
+
+-- lw $reg1, 30($ZERO)
+-- $reg1 = 0000 000C
+00 : 8C0100C0;
+
+-- lw $reg2, 3C($ZERO)
+-- $reg2 = FAFA FAFA
+01 : 8C0200F0;
+
+-- lw $reg8, FFF8($ZERO)
+-- $reg8 = 0000 01FF
+02 : 8C08FFF8;
+
+-- andi $reg3, $reg2, 000000AF
+-- $reg3 = FAFA FAFA and 0000 00AF = 0000 00AA
+03 : 304300AF;
+
+-- xor $reg4, $reg3, $reg2
+-- $reg4 = 0000 00AA xor FAFA FAFA = FAFA FA50
+04 : 00622026;
+
+-- multu $reg2, $reg1
+-- FAFA FAFA * 0000 000C = 0000 000B C3C3 C3B8
+-- HI = 0000 000B
+-- LO = C3C3 C3B8
+05 : 00410019;
+
+-- mflo $reg5
+-- $reg5 = C3C3 C3B8
+06 : 00002812;
+
+-- mfhi $reg6
+-- $reg6 = 0000 000B
+07 : 00003010;
+
+-- sw $reg4, E($ZERO)
+-- 0E: FAFA FA50
+08 : AC040038;
+
+-- sw $reg5, FFFC($ZERO)
+-- Outport = C3C3C3B8
+09 : AC05FFFC;
+
+0A : FC000000; -- halt execution
+
+30 : 0000000C;
+3C : FAFAFAFA;
+
+End;
