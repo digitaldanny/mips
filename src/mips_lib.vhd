@@ -50,5 +50,12 @@ package MIPS_LIB is
   	constant ALU_OUT_MUX_ALU : integer := 0;
   	constant ALU_OUT_MUX_HI	: integer := 1;
   	constant ALU_OUT_MUX_LO : integer := 2;
+  	
+  -----------------------------------------------------
+  -- MEMORY ADDRESSING CONSTANTS
+  
+  	constant MEM_INPORT0 : std_logic_vector(31 downto 0) := X"0000FFF8";
+  	constant MEM_INPORT1 : std_logic_vector(31 downto 0) := X"0000FFFC";
+  	constant MEM_OUTPORT : std_logic_vector(31 downto 0) := X"0000FFFC";
   
 end MIPS_LIB;
