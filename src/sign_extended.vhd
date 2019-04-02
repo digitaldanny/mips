@@ -14,7 +14,8 @@ use ieee.numeric_std.all;
 
 
 entity sign_extended is
-    port(
+	port(
+		en 		: in std_logic;
     	input 	: in std_logic_vector(15 downto 0);
     	output 	: out std_logic_vector(31 downto 0)
     );
@@ -23,10 +24,10 @@ end sign_extended;
 architecture BHV of sign_extended is
 begin
 	
-	process (input)
+	process (input, en)
 	begin
 		
-		if ( input(15) = '1' ) then
+		if ( input(15) = '1' and en = '1' ) then
 			output <= X"FFFF" & input; -- negative sign extend
 		else
 			output <= X"0000" & input; -- positive sign extend
