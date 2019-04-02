@@ -4,3 +4,4 @@ quartus/
 *.mpf
 *.wlf
 *.flock
+*.qip
