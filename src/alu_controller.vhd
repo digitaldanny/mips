@@ -188,7 +188,7 @@ begin
 			-- fake instruction
 			op_select_sig <= std_logic_vector(to_unsigned(ALU_HALT, 6));
 			
-		when others => null;
+		when others => op_select_sig <= "111111"; -- if seen in tb, logic is incorrect
 		end case;
 		
 	end process;
