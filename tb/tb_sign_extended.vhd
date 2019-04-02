@@ -21,18 +21,21 @@ entity TB_SIGN_EXTENDED is
 end TB_SIGN_EXTENDED;
 
 architecture TB of TB_SIGN_EXTENDED is
+	signal en	 : std_logic;
 	signal input : std_logic_vector(15 downto 0);
 	signal output : std_logic_vector(31 downto 0);
 begin
 	
 	UUT : entity work.sign_extended
 		port map(
+			en	   => en,
 			input  => input,
 			output => output
 		);
 	
 	process
 	begin
+		en <= '1'; -- just want to see the sign extension
 		
 		-- output should be X"00007FFF"
 		input <= X"7FFF";
