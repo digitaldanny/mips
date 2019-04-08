@@ -162,10 +162,6 @@ begin
 		ir_r_type <= "001000";
 		wait for 10 ns;
 		
-		-- IMMEDIATE INSTRUCTION OP CODE =============================
-		
-		-- JUMP INSTRUCTION OP CODE ==================================
-		
 		wait;
 		
 	end process;
