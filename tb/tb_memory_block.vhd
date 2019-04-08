@@ -99,7 +99,7 @@ begin
 			mem_rd_en <= '0';
 		
 		-- write to the address (STORE 0x0A0A0A0A to mem(0x00000000))
-		elsif ( count_unsigned < to_unsigned(100, 32 ) ) then 
+		elsif ( count_unsigned < to_unsigned(50, 32 ) ) then 
 			rst <= '0';
 			mem_in <= X"00000000"; 
 			reg_b_data <= X"0A0A0A0A";
