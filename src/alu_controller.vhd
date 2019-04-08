@@ -42,6 +42,7 @@ begin
 		alu_lo_hi_sig <= std_logic_vector(to_unsigned(ALU_OUT_MUX_ALU,2)); -- ALU OUT
 		lo_en_sig <= '1';  -- these should always be able to update except for specific cases
 		hi_en_sig <= '1';  -- these should always be able to update except for specific cases
+		op_select_sig <= "000000"; -- by default, shift logical left
 		
 		case OP_CODE is
 		when "000000" =>	-- 0x00, r type instructions (15)
@@ -188,7 +189,7 @@ begin
 			-- fake instruction
 			op_select_sig <= std_logic_vector(to_unsigned(ALU_HALT, 6));
 			
-		when others => op_select_sig <= "111111"; -- if seen in tb, logic is incorrect
+		when others => null;
 		end case;
 		
 	end process;
