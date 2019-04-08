@@ -12,7 +12,8 @@ use work.MIPS_LIB.all;
 -- Last Edit 	: 3/29/2019
 
 -- UPDATES
--- 3/29/2019	: Component initialization. 
+-- 3/29/2019	: Component initialization.
+-- 4/8/2019		: Simplified IF-branches with default signal values in process
 
 -- TODO: Does ALU have anything to do for _MFHI and _MFLO?
 
@@ -41,11 +42,11 @@ begin
 	process( op_select, ir_shift, a, b )
 		variable OP_SELECT_VAR 	: integer; -- just to make decoding pretty :)
 		variable IR_SHIFT_VAR 	: integer;
-		variable SIGN_BIT		: std_logic;
 		variable SIGNED_A		: signed(IN_WIDTH-1 downto 0);
 		variable SIGNED_B		: signed(IN_WIDTH-1 downto 0);
 		variable UNSIGNED_A_64	: unsigned(2*IN_WIDTH-1 downto 0);
 		variable UNSIGNED_B_64 	: unsigned(2*IN_WIDTH-1 downto 0);
+		variable SIGNED_B_64 	: signed(2*IN_WIDTH-1 downto 0);
 	begin
 		
 		-- MUX SELECT PREPARATION
@@ -55,6 +56,7 @@ begin
 		SIGNED_B 		:= signed(b);
 		UNSIGNED_A_64	:= resize(unsigned(a), UNSIGNED_A_64'length);
 		UNSIGNED_B_64	:= resize(unsigned(b), UNSIGNED_B_64'length);
+		SIGNED_B_64		:= resize(signed(b), UNSIGNED_B_64'length);
 		
 		-- DEFAULT SIGNAL VALUES
 		branch_taken_sig 	<= '0';
@@ -101,23 +103,17 @@ begin
 			
 		when ALU_SRA =>		-- shift right arithmetic
 			-- rd <- rt >> sa
-			sign_bit := b(IN_WIDTH-1); -- top bit is the sign bit for a signed number
-			result_sig <= std_logic_vector(shift_right(UNSIGNED_B_64, IR_SHIFT_VAR));
-			result_sig(IN_WIDTH-1) <= sign_bit; -- duplicate the sign bit
+			result_sig <= std_logic_vector(shift_right(SIGNED_B_64, IR_SHIFT_VAR));
 			
 		when ALU_SLT =>		-- set if less than signed
 			-- rd <- rs < rt	
 			if ( signed_a < signed_b ) then
 				result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
-			else 
-				result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 			end if;
 				
 		when ALU_SLTU =>	-- set if less than unsigned
 			if ( unsigned(a) < unsigned(b) ) then
 				result_sig <= std_logic_vector(to_unsigned(1, 2*WIDTH));
-			else 
-				result_sig <= std_logic_vector(to_unsigned(0, 2*WIDTH));
 			end if;
 			
 		when ALU_LW =>		-- load word
