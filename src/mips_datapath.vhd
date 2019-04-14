@@ -35,6 +35,7 @@ entity MIPS_DATAPATH is
 		aluSrcB		: in std_logic_vector(1 downto 0);
 		regWrite	: in std_logic;
 		regDst		: in std_logic;
+		op_code		: out std_logic_vector(5 downto 0);
 		
 		-- non controller IO ------------------------------
 		clk			: in std_logic;
@@ -585,15 +586,19 @@ begin
 	mem_block_in_port_data 	  <= in_port;
 	
 	-------------- MEMORY BLOCK MUX ----------------
-	mem_block_mux_sel 	<= iOrD;
+	mem_block_mux_sel 	<= IorD;
 	mem_block_mux_a		<= pc_output;
 	mem_block_mux_b 	<= alu_out_output;
 	
 	---------------- RESET OUTPUTS -----------------
-	process(rst)
+	process(rst, mem_block_out_port, inst_reg_out_31_26)
 	begin
 		if (rst = '1') then
 			out_port <= (others => '0');
+			op_code  <= (others => '0');
+		else
+			out_port <= mem_block_out_port;
+			op_code  <= inst_reg_out_31_26;
 		end if;
 	end process;
 	
