@@ -2,6 +2,27 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 package MIPS_LIB is
+
+  -----------------------------------------------------
+  -- OP CODE INSTRUCIONS
+  	constant OP_R_TYPE 	: std_logic_vector(5 downto 0) := "000000";
+  	constant OP_BCOMPZ 	: std_logic_vector(5 downto 0) := "000001";
+  	constant OP_J 		: std_logic_vector(5 downto 0) := "000010";
+  	constant OP_JAL 	: std_logic_vector(5 downto 0) := "000011";
+  	constant OP_BEQ 	: std_logic_vector(5 downto 0) := "000100";
+  	constant OP_BNE 	: std_logic_vector(5 downto 0) := "000101";
+  	constant OP_BLEZ 	: std_logic_vector(5 downto 0) := "000110";
+  	constant OP_BGTZ 	: std_logic_vector(5 downto 0) := "000111";
+  	constant OP_ADDIU 	: std_logic_vector(5 downto 0) := "001001";
+  	constant OP_SLTI 	: std_logic_vector(5 downto 0) := "001010";
+  	constant OP_SLTIU 	: std_logic_vector(5 downto 0) := "001011";
+  	constant OP_ANDI 	: std_logic_vector(5 downto 0) := "001100";
+  	constant OP_ORI		: std_logic_vector(5 downto 0) := "001101";
+  	constant OP_XORI	: std_logic_vector(5 downto 0) := "001110";
+  	constant OP_SUBIU 	: std_logic_vector(5 downto 0) := "010000";
+  	constant OP_LW 		: std_logic_vector(5 downto 0) := "100011";
+  	constant OP_SW 		: std_logic_vector(5 downto 0) := "101011";
+  	constant OP_HALT 	: std_logic_vector(5 downto 0) := "111111";
   
   -----------------------------------------------------
   -- ALU R/I TYPE INSTRUCTION CONSTANTS
@@ -57,5 +78,8 @@ package MIPS_LIB is
   	constant MEM_INPORT0 : std_logic_vector(31 downto 0) := X"0000FFF8";
   	constant MEM_INPORT1 : std_logic_vector(31 downto 0) := X"0000FFFC";
   	constant MEM_OUTPORT : std_logic_vector(31 downto 0) := X"0000FFFC";
+  	
+  -----------------------------------------------------
+  -- INSTRUCTION CONSTANTS  	
   
 end MIPS_LIB;
