@@ -7,12 +7,13 @@ use ieee.numeric_std.all;
 
 -- Author		: Daniel Hamilton
 -- Creation 	: 3/29/2019
--- Last Edit 	: 4/1/2019
+-- Last Edit 	: 4/14/2019
 
 -- UPDATES
 -- 3/29/2019	: Component initialization. 
 -- 4/1/2019		: Linked datapath to memory block and register file
 -- 4/2/2019		: Reorganized datapath connections using more clearly named signals.
+-- 4/14/2019	: Added an op_code out port for communication to controller
 
 entity MIPS_DATAPATH is
 	generic (
