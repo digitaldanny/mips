@@ -176,8 +176,11 @@ begin
 		when ALU_JR =>		-- jump register
 			branch_taken_sig <= '1';
 			
+		when ALU_MFHI =>	-- move HI register into GPR[RD]
+			
+		when ALU_MFLO =>	-- move LO register into GPR[RD]
+			
 		when ALU_HALT =>	-- fake instruction
-			-- nop
 		
 		when others => null;
 		end case;
