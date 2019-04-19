@@ -3,6 +3,47 @@ use ieee.std_logic_1164.all;
 
 package MIPS_LIB is
 
+   -----------------------------------------------------
+  -- OP CODE INSTRUCIONS 
+  	type INSTR_T is
+  	(
+  	T_DEFAULT	,
+	T_ADD 	    ,
+	T_SUB 	    ,
+	T_MULT_SIGNED,
+	T_MULTU 	,
+	T_AND	    ,
+	T_OR		,
+	T_XOR	    ,
+	T_SRL	    ,
+	T_SLL	    ,
+	T_SRA	    ,
+	T_SLT	    ,
+	T_SLTU	    ,
+	T_MFHI	    ,
+	T_MFLO	    ,
+	T_JR		,
+	T_BLTZ	    ,
+	T_BGEZ 	    ,
+	T_BCOMPZ	,
+	T_J		    ,
+	T_JAL	    ,
+	T_BEQ	    ,
+	T_BNE	    ,
+	T_BLEZ	    ,
+	T_BGTZ	    ,
+	T_ADDI	    ,
+	T_SUBIU	    ,
+	T_ANDI	    ,
+	T_SLTI	    ,
+	T_SLTIU	    ,
+	T_LW		,
+	T_SW		,
+	T_XORI      ,
+	T_HOLD	    ,
+	T_HALT
+  	);
+
   -----------------------------------------------------
   -- OP CODE INSTRUCIONS
   	constant OP_R_TYPE 	: std_logic_vector(5 downto 0) := "000000";
@@ -22,6 +63,7 @@ package MIPS_LIB is
   	constant OP_SUBIU 	: std_logic_vector(5 downto 0) := "010000";
   	constant OP_LW 		: std_logic_vector(5 downto 0) := "100011";
   	constant OP_SW 		: std_logic_vector(5 downto 0) := "101011";
+  	constant OP_HOLD	: std_logic_vector(5 downto 0) := "111110";
   	constant OP_HALT 	: std_logic_vector(5 downto 0) := "111111";
   
   -----------------------------------------------------
@@ -69,8 +111,8 @@ package MIPS_LIB is
   -- ALU OUT MUX constants
   	
   	constant ALU_OUT_MUX_ALU : integer := 0;
-  	constant ALU_OUT_MUX_HI	: integer := 1;
-  	constant ALU_OUT_MUX_LO : integer := 2;
+  	constant ALU_OUT_MUX_LO : integer := 1;
+  	constant ALU_OUT_MUX_HI	: integer := 2;
   	
   -----------------------------------------------------
   -- MEMORY ADDRESSING CONSTANTS
