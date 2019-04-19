@@ -52,8 +52,8 @@ architecture BHV of MIPS_CONTROLLER is
 		S_I_EXECUTION, S_I_WAIT, S_I_COMPLETE,				-- I TYPE STATES
 		S_LW_SW, S_LW_SW_WAIT, S_SW_COMPLETE, 				-- LW / SW STATES
 		S_LW_MEMACC, S_LW_WAIT, S_LW_COMPLETE, S_SW_WAIT,	-- LW / SW STATES CONTINUED
-		S_BEQ_COMPLETE,										-- BRANCH STATES
-		S_J_COMPLETE										-- J TYPE STATES
+		S_BR_COMPLETE,										-- BRANCH STATES
+		S_J_WAIT, S_J_COMPLETE								-- J TYPE STATES
 	);
 	
 	-- INTERNAL SIGNAL DECLARATIONS ----------------------------------------
@@ -107,12 +107,12 @@ begin
 		jumpAndLink_sig	<= '0';
 		isSigned_sig	<= '0';    
 		pcSource_sig	<= (others => '0');    
-		aluOp_sig		<= (others => '0');
+		aluOp_sig		<= OP_HOLD; -- hold the values in the current lo, hi registers
 		aluSrcA_sig		<= '0';
 		aluSrcB_sig		<= (others => '0');
 		regWrite_sig	<= '0';    
 		regDst_sig		<= '0';
-		
+
 		case state is
 			
 		-- ==========================================================
@@ -164,11 +164,17 @@ begin
 			elsif ( op_code = OP_SW or op_code = OP_LW) then 	-- S_LW_SW  
 				next_state <= S_LW_SW;
 				
-			elsif ( op_code = OP_BCOMPZ ) then					-- S_BEQ_COMPLETE 
-				next_state <= S_BEQ_COMPLETE;
+			elsif ( op_code = OP_BEQ or 
+					op_code = OP_BNE or 
+					op_code = OP_BLEZ or
+					op_code = OP_BGTZ
+										) then					-- S_BR_COMPLETE 
+				next_state <= S_BR_COMPLETE;
 				
-			elsif ( op_code = OP_J ) then						-- S_J_COMPLETE	
-				next_state <= S_J_COMPLETE;
+			elsif ( op_code = OP_J or
+					op_code = OP_JAL
+									) then						-- S_J_COMPLETE	
+				next_state <= S_J_WAIT;
 				
 			elsif ( op_code = OP_HALT ) then					-- INFINITE LOOP AT EOP
 				next_state <= S_DECODE;
@@ -187,12 +193,16 @@ begin
 		
 			aluSrcA_sig <= '1'; 	-- register A => ALU_A for R type instruction
 			aluSrcB_sig <= "00";	-- register B => ALU_B for R type instruction
-			aluOp_sig	<= (others => '0'); -- op code for R type instructions
-			
+			aluOp_sig	<= OP_R_TYPE; -- op code for R type instructions
+
 			-- STATE HANDLING
 			next_state <= S_R_WAIT;
 			
 		when S_R_WAIT =>
+			
+			aluSrcA_sig <= '1'; 	-- register A => ALU_A for R type instruction
+			aluSrcB_sig <= "00";	-- register B => ALU_B for R type instruction
+			aluOp_sig		<= OP_R_TYPE; -- hold so the HI and LO output can be written for MFHI and MFLO commands
 			
 			regDst_sig 		<= '1';	-- RD register loaded as the register to write ALU_OUT to
 			regWrite_sig 	<= '1';	-- enable register writes to the register file
@@ -202,7 +212,7 @@ begin
 			next_state <= S_R_COMPLETE;
 			
 		when S_R_COMPLETE =>
-			
+		
 			-- STATE HANDLING
 			next_state <= S_FETCH;
 			
@@ -294,7 +304,13 @@ begin
 		-- = 		   			BEQ INSTRUCTIONS					=
 		-- =														=
 		-- ==========================================================
-		when S_BEQ_COMPLETE =>
+		when S_BR_COMPLETE =>	-- branch instruction assumes address is waiting on ALU_OUT
+		
+			aluSrcA_sig <= '1';		-- rs loaded to A
+			aluSrcB_sig <= "00";	-- rt loaded to B
+			aluOp_sig	<= op_code;	-- alu controller should receive BEQ, BNE, BGTZ, BLTZ
+			pcWriteCond_sig <= '1';	-- pc should be allowed to branch if branch_taken signal is set
+			pcSource_sig 	<= "01"; -- pc source is ALU_OUT if branch is true
 			
 			-- STATE HANDLING
 			next_state <= S_FETCH;
@@ -304,7 +320,21 @@ begin
 		-- = 		   			JUMP INSTRUCTIONS					=
 		-- =														=
 		-- ==========================================================
+		when S_J_WAIT =>
+		
+			pcWrite_sig 	<= '1';		-- PC value will be written in this state
+			pcSource_sig 	<= "10";	-- PC source is PC(31:28) + IR(25:0)
+				
+			-- STATE HANDLING
+			next_state <= S_J_COMPLETE;
+		
 		when S_J_COMPLETE =>
+		
+			-- when controller sets JumpAndLink true, the register file loads
+			-- s31 as the write register
+			if ( op_code = OP_JAL ) then
+				jumpAndLink_sig <= '1';
+			end if;
 		
 			-- STATE HANDLING
 			next_state <= S_FETCH;
