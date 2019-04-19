@@ -41,7 +41,7 @@ USE altera_mf.altera_mf_components.all;
 
 ENTITY ram IS
 	GENERIC (
-		init_file : string := "../mif/TestCase1.mif"
+		init_file : string := "../mif/TestCase4.mif"
 	);
 	PORT
 	(
