@@ -199,6 +199,11 @@ architecture STR of MIPS_DATAPATH is
 	signal shift_left_sign_input  : std_logic_vector(WIDTH-1 downto 0);
 	signal shift_left_sign_output : std_logic_vector(WIDTH-1 downto 0);
 	
+	-------------- BRANCH REGISTER -----------------
+	signal branch_taken_reg_en     : std_logic;
+	signal branch_taken_reg_input  : std_logic_vector(WIDTH-1 downto 0);
+	signal branch_taken_reg_output : std_logic_vector(WIDTH-1 downto 0);
+		
 begin
 	
 	--==================== COMPONENT CONNECTIONS =====================
@@ -277,6 +282,18 @@ begin
 			hi_en     => alu_controller_hi_en,     
 			lo_en     => alu_controller_lo_en,     
 			alu_lo_hi => alu_controller_alu_lo_hi 
+		);
+		
+	U_BRANCH_TAKEN_REG : entity work.reg
+		generic map(
+			WIDTH => WIDTH
+		)
+		port map(
+			clk    => clk,
+			rst    => rst,
+			en     => branch_taken_reg_en,
+			input  => branch_taken_reg_input,
+			output => branch_taken_reg_output
 		);
 		
 	U_PC_IN_MUX : entity work.mux_4x1
@@ -510,7 +527,7 @@ begin
 	
 	---------------- PC REGISTER -----------------
 	pc_input <= pc_in_mux_output; 
-	pc_en	 <= pcWrite or (pcWriteCond and alu_branch_taken);
+	pc_en	 <= pcWrite or (pcWriteCond and branch_taken_reg_output(0));
 	
 	--------------- ALU CONTROLLER ---------------
 	alu_controller_op_code 		<= aluOp;
@@ -590,6 +607,11 @@ begin
 	mem_block_mux_sel 	<= IorD;
 	mem_block_mux_a		<= pc_output;
 	mem_block_mux_b 	<= alu_out_output;
+	
+	-------------- BRANCH TAKEN REG ----------------
+	-- it's ugly, I know :(
+	branch_taken_reg_en      <= '1';
+	branch_taken_reg_input   <= "0000000000000000000000000000000" & alu_branch_taken;
 	
 	---------------- RESET OUTPUTS -----------------
 	process(rst, mem_block_out_port, inst_reg_out_31_26)
