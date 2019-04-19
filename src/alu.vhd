@@ -174,13 +174,17 @@ begin
 			end if;
 			
 		when ALU_JR =>		-- jump register
-			branch_taken_sig <= '1';
+			branch_taken_sig <= '1'; -- PC update is enabled
+			result_sig <= std_logic_vector(UNSIGNED_A_64); -- RS data is pulled from Register File and transfered to PC
 			
 		when ALU_MFHI =>	-- move HI register into GPR[RD]
+			-- CURRENTLY NO ACTION REQUIRED
 			
 		when ALU_MFLO =>	-- move LO register into GPR[RD]
+			-- CURRENTLY NO ACTION REQUIRED
 			
 		when ALU_HALT =>	-- fake instruction
+			-- CURRENTLY NO ACTION REQUIRED
 		
 		when others => null;
 		end case;
