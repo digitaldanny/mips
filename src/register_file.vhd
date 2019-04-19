@@ -43,11 +43,11 @@ begin
         	if (wr_en = '1') then
         		
         		-- jump_and_link write update to auto write to register
-        		-- $s31
+        		-- $s31 (register 16)
         		if ( JumpAndLink = '0' ) then
         			regs(to_integer(unsigned(wr_addr))) <= wr_data;
         		elsif ( JumpAndLink = '1' ) then
-        			regs(to_integer(to_unsigned(31, 5))) <= wr_data;
+        			regs(to_integer(to_unsigned(16, 5))) <= wr_data;
         		end if;
         		
             end if;                
