@@ -52,7 +52,7 @@ architecture BHV of MIPS_CONTROLLER is
 		S_I_EXECUTION, S_I_WAIT, S_I_COMPLETE,				-- I TYPE STATES
 		S_LW_SW, S_LW_SW_WAIT, S_SW_COMPLETE, 				-- LW / SW STATES
 		S_LW_MEMACC, S_LW_WAIT, S_LW_COMPLETE, S_SW_WAIT,	-- LW / SW STATES CONTINUED
-		S_BR_COMPLETE,										-- BRANCH STATES
+		S_BR_COMPARE, S_BR_EXECUTE, S_BR_COMPLETE,			-- BRANCH STATES
 		S_J_WAIT, S_J_COMPLETE								-- J TYPE STATES
 	);
 	
@@ -132,17 +132,17 @@ begin
 		-- Increment PC = PC + 4.
 		when S_FETCH =>
 		
-			-- IR = mem[PC]
-			IorD_sig 	<= '0'; -- select PC as the next memory address
-			memRead_sig <= '1';	-- read next PC address
-			irWrite_sig <= '1'; -- IR is loaded with the next memory data 	
-			
 			-- PC = PC + 4
 			aluSrcA_sig  <= '0'; 	-- PC is loaded into ALU to increment to next address
 			aluSrcB_sig  <= "01"; 	-- B = 4 to increment PC to next address
 			aluOp_sig	 <= OP_ADDIU; -- addition op code
 			pcWrite_sig  <= '1';	-- allow the PC to go to the next address
 			pcSource_sig <= "00"; 	-- stores the newly incremented PC value
+		
+			-- IR = mem[PC]
+			IorD_sig 	<= '0'; -- select PC as the next memory address
+			memRead_sig <= '1';	-- read next PC address
+			irWrite_sig <= '1'; -- IR is loaded with the next memory data 	
 		
 			-- STATE HANDLING
 			next_state 	<= S_DECODE;
@@ -169,11 +169,19 @@ begin
 					op_code = OP_BLEZ or
 					op_code = OP_BGTZ
 										) then					-- S_BR_COMPLETE 
-				next_state <= S_BR_COMPLETE;
+				next_state <= S_BR_COMPARE;
 				
 			elsif ( op_code = OP_J or
 					op_code = OP_JAL
 									) then						-- S_J_COMPLETE	
+									
+				-- when controller sets JumpAndLink true, the register file loads
+				-- s31 as the write register
+				if ( op_code = OP_JAL ) then
+					regWrite_sig	<= '1'; -- allow register in register file to be written
+					jumpAndLink_sig <= '1'; -- write to the link register 
+				end if;
+				
 				next_state <= S_J_WAIT;
 				
 			elsif ( op_code = OP_HALT ) then					-- INFINITE LOOP AT EOP
@@ -200,13 +208,18 @@ begin
 			
 		when S_R_WAIT =>
 			
+			-- allow the PC to be updated with the ALU result if the ALU controller
+			-- determines that the instruction was a JR instruction
+			pcWriteCond_sig <= '1';
+			pcSource_sig <= "00";
+			
 			aluSrcA_sig <= '1'; 	-- register A => ALU_A for R type instruction
 			aluSrcB_sig <= "00";	-- register B => ALU_B for R type instruction
 			aluOp_sig		<= OP_R_TYPE; -- hold so the HI and LO output can be written for MFHI and MFLO commands
-			
+
 			regDst_sig 		<= '1';	-- RD register loaded as the register to write ALU_OUT to
 			regWrite_sig 	<= '1';	-- enable register writes to the register file
-			memToReg_sig 	<= '0';	-- Write the output of ALU_OUT to the register file
+			memToReg_sig 	<= '0';	-- Write the output of ALU_OUT to the register file				
 			
 			-- STATE HANDLING
 			next_state <= S_R_COMPLETE;
@@ -253,7 +266,7 @@ begin
 		
 			-- rt <= mem[base + offset]
 			aluSrcA_sig <= '1';	 -- address base loaded into A
-			aluSrcB_sig <= "10"; -- sign extended IR[15:0] with bit shifting to compute memory address
+			aluSrcB_sig <= "10"; -- sign extended IR[15:0] without bit shifting to compute memory address
 			aluOp_sig	<= OP_ADDIU; -- base + offset
 			
 			-- STATE HANDLING (defaults to fetch state)
@@ -304,14 +317,29 @@ begin
 		-- = 		   			BEQ INSTRUCTIONS					=
 		-- =														=
 		-- ==========================================================
-		when S_BR_COMPLETE =>	-- branch instruction assumes address is waiting on ALU_OUT
+		
+		when S_BR_COMPARE =>	-- compare RS with RT 
 		
 			aluSrcA_sig <= '1';		-- rs loaded to A
 			aluSrcB_sig <= "00";	-- rt loaded to B
 			aluOp_sig	<= op_code;	-- alu controller should receive BEQ, BNE, BGTZ, BLTZ
-			pcWriteCond_sig <= '1';	-- pc should be allowed to branch if branch_taken signal is set
-			pcSource_sig 	<= "01"; -- pc source is ALU_OUT if branch is true
 			
+			-- STATE HANDLING
+			next_state <= S_BR_EXECUTE;
+			
+		when S_BR_EXECUTE =>
+			
+			aluSrcA_sig <= '0';		-- PC is loaded into A in case branch_taken is set
+			aluSrcB_sig <= "11"; 	-- PC offset shifted left by 2 to account for word size addresses
+			aluOp_sig <= OP_ADDIU;	-- add the offset to the PC value and output to the PC_IN MUX
+			pcWriteCond_sig <= '1';	-- pc should be allowed to branch if branch_taken signal is set
+			pcSource_sig 	<= "00"; -- pc source is ALU RESULT if branch is true
+
+			-- STATE HANDLING
+			next_state <= S_BR_COMPLETE;			
+			
+		when S_BR_COMPLETE =>	-- branch instruction assumes address is waiting on ALU_OUT
+	
 			-- STATE HANDLING
 			next_state <= S_FETCH;
 			
@@ -329,12 +357,6 @@ begin
 			next_state <= S_J_COMPLETE;
 		
 		when S_J_COMPLETE =>
-		
-			-- when controller sets JumpAndLink true, the register file loads
-			-- s31 as the write register
-			if ( op_code = OP_JAL ) then
-				jumpAndLink_sig <= '1';
-			end if;
 		
 			-- STATE HANDLING
 			next_state <= S_FETCH;
