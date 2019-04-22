@@ -1,0 +1,18 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = bin;
+% Program RAM Data %		
+Content						--  This program will calculate the GCD of the values stored in inport0 and inport1	
+
+Begin
+
+												--Main :	
+00 : 10001100000100001111111111111000	; 		-- lw $s0, FFF8($zero)			// Load word from the InPort0 to $S0/R16	
+
+01 : 10101100000100001111111111111100	;		-- sw $s0, FFFC($zero)			// store s1 to the outport1	
+                                    
+			 	 		 	 		 			-- End:
+02 : 00001000000000000000000000000000	;		-- j  End	  			// infinite loop
+												 
+End;
