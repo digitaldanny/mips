@@ -1,0 +1,33 @@
+Depth = 256;
+Width = 32;
+Address_radix = hex;
+Data_radix = bin;
+% Program RAM Data %		
+Content						--  This program will calculate the GCD of the values stored in inport0 and inport1	
+
+Begin
+
+												--Main :	
+00 : 10001100000100001111111111111000	; 		-- lw $s0, FFF8($zero)			// Load word from the InPort0 to $S0/R16		        
+01 : 10001100000100011111111111111100	; 		-- lw $s1, FFFC($zero)			// Load word from the InPort1 to $S1/R17	
+			                        
+			 	 		 	 		 			-- loop:
+02 : 00010010001100000000000000000110	;		-- beq $s1, $s0, Exit_the_Loop		// If $s1 == $s0, Exit the loop
+03 : 00000010001100000100000000101011	;		-- sltu $t0, $s1, $s0			// if S1 < S0, t0 = 1; else t0 =0 		
+04 : 00010101000000000000000000000010	;		-- bne $t0, $zero, skip			// if t0 != 0, branch to skip			
+05 : 00000010001100001000100000100011	;		-- subu $s1, $s1, $s0			// $s1= $s1- $s0			
+06 : 00001000000000000000000000000010	;		-- j loop				// jump to loop	
+                                    
+	                                            --skip: 	
+07 : 00000010000100011000000000100011	;		-- subu $s0, $s0, $s1			// $s0= $s0 - $s1		
+08 : 00001000000000000000000000000010	;		-- j loop				// jump to loop	 
+                                    
+												-- Exit_the_Loop:
+09 : 10101100000100001111111111111100	;		-- sw $s0, FFFC($zero)			// store s1 to the outport1	
+                                    
+			 	 		 	 		 			-- End:
+-- 0A : 00001000000000000000000000000000	;		-- j  End	  			// infinite loop
+
+0A : 00001000000000000000000000001010	;		-- j  End	  			// infinite loop
+												 
+End;
