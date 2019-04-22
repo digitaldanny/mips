@@ -23,6 +23,7 @@ architecture STR of TB_MIPS_TOP_LEVEL is
 	signal in_port_sel 	: std_logic;
 	signal in_port     	: std_logic_vector(WIDTH-1 downto 0);
 	signal out_port    	: std_logic_vector(WIDTH-1 downto 0);
+	signal in_port_en	: std_logic;
 	
 begin	
 	
@@ -33,6 +34,7 @@ begin
 		port map(
 			clk			=> clk,
 			rst			=> rst,
+			in_port_en  => in_port_en,
 			in_port_sel => in_port_sel,
 			in_port     => in_port,
 			out_port    => out_port
@@ -50,7 +52,7 @@ begin
 		wait for 20 ns;
 		rst <= '0';
 		
-		for i in 1 to 10000 loop
+		for i in 1 to 50000 loop
 			if ( clk = '0' ) then
 				clk <= '1';
 			else 
@@ -70,6 +72,7 @@ begin
 			count := count + to_unsigned(1, 32);
 		end if;
 		
+		in_port_en  <= '0';
 		in_port_sel <= '0';
 		in_port    	<= (others => '0');
 		

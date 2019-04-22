@@ -47,6 +47,7 @@ architecture TB of TB_ALU_MEMORY_BLOCK is
 	signal user_in_port_en : std_logic;
 	signal reg_b_data      : std_logic_vector(WIDTH-1 downto 0);
 	signal out_port        : std_logic_vector(WIDTH-1 downto 0);
+	signal user_in_port_wr_en : std_logic;
 	   
 	signal count_unsigned : unsigned(31 downto 0) := X"00000000";
 begin
@@ -65,7 +66,8 @@ begin
 			mem_wr_en       => mem_wr_en,
 			user_in_port_en => user_in_port_en,
 			reg_b_data      => reg_b_data,
-			out_port        => out_port
+			out_port        => out_port,
+			user_in_port_wr_en => user_in_port_wr_en
 		);
 		
 	-- clock process for the main testbench
@@ -95,6 +97,7 @@ begin
 			mem_in <= (others => '0');
 			reg_b_data <= (others => '0');
 			user_in_port_en <= '0';
+			user_in_port_wr_en <= '0';
 			mem_wr_en <= '0';
 			mem_rd_en <= '0';
 		
@@ -146,6 +149,18 @@ begin
 		
 		-- load inport0 with data functionality (LOAD 0x00010000 to INPORT0)
 		elsif ( count_unsigned < to_unsigned(400, 32 ) ) then 			
+			user_in_port_wr_en <= '0';
+		
+			mem_in <= X"0000FFF8"; 
+			user_in_port_en <= '0'; -- choose port 0
+			in_port_data <= X"00010000";
+			
+			-- clear previous signals
+			mem_wr_en <= '0';
+			reg_b_data <= X"DEADBEEF";
+		elsif ( count_unsigned < to_unsigned(425, 32)) then
+			user_in_port_wr_en <= '1';
+		
 			mem_in <= X"0000FFF8"; 
 			user_in_port_en <= '0'; -- choose port 0
 			in_port_data <= X"00010000";
@@ -156,9 +171,18 @@ begin
 		
 		-- load inport1 with data functionality (LOAD 0x00000001 to INPORT1)
 		elsif ( count_unsigned < to_unsigned(450, 32 ) ) then 
+			user_in_port_wr_en <= '0';
+		
 			mem_in <= X"0000FFFC"; 
 			user_in_port_en <= '1'; -- choose port 1
 			in_port_data <= X"00000001";
+			
+		elsif ( count_unsigned < to_unsigned(475, 32) ) then
+			user_in_port_wr_en <= '1';
+		
+			mem_in <= X"0000FFFC"; 
+			user_in_port_en <= '1'; -- choose port 1
+			in_port_data <= X"00000001";		
 		
 		-- read from inport 0 (READ 0x00010000 from INPORT0)
 		elsif ( count_unsigned < to_unsigned(500, 32 ) ) then 
