@@ -21,6 +21,7 @@ entity MIPS_CONTROLLER is
 	clk : in std_logic;
 	rst : in std_logic;
 	op_code : in std_logic_vector(5 downto 0);
+	mem_out_delay : in std_logic; -- timing is different for inport vs sram
 	
     -- datapath interaction ports
 	pcWrite 	: out std_logic;
@@ -75,7 +76,8 @@ architecture BHV of MIPS_CONTROLLER is
 	signal aluSrcA_sig		: std_logic;
 	signal aluSrcB_sig		: std_logic_vector(1 downto 0);
 	signal regWrite_sig	    : std_logic;
-	signal regDst_sig		: std_logic;	
+	signal regDst_sig		: std_logic;
+	signal mem_out_delay_freeze : std_logic;	
 begin  
 	
 	-- STATE SWITCHING PROCESS ---------------------------------------------
@@ -92,7 +94,7 @@ begin
 	end process;
 	
 	-- CONTROLLER STATE MACHINE --------------------------------------------
-	process( state, op_code )
+	process( state, op_code, mem_out_delay )
 	begin
 		
 		-- DEFAULT SIGNAL ASSIGNMENTS
@@ -292,6 +294,7 @@ begin
 			-- allow memory to read from the address sent to mem_in
 			memRead_sig	<= '1';	 -- enable memory read to load data from memory
 			IorD_sig 	<= '1';  -- memory address comes from ALU out to load data for LW instruction
+			mem_out_delay_freeze <= mem_out_delay;	-- 
 			
 			-- STATE HANDLING
 			next_state <= S_LW_WAIT;
@@ -300,14 +303,24 @@ begin
 			
 			memRead_sig	 <= '1';		-- allow the data to output from SRAM to the mem_out
 			
+			if ( mem_out_delay_freeze = '1' ) then
+				regDst_sig 	 <= '0';	-- load address of RT into the register file to be written to
+				memToReg_sig <= '1'; 	-- set mux to allow data from memory into the register file
+				regWrite_sig <= '1';	-- Load the data from memory into the register file
+			end if;	
+			
 			-- STATE HANDLING
 			next_state <= S_LW_COMPLETE;
 			
 		when S_LW_COMPLETE => 	-- latch the information into the register file
 			
-			regDst_sig 	 <= '0';	-- load address of RT into the register file to be written to
-			memToReg_sig <= '1'; 	-- set mux to allow data from memory into the register file
-			regWrite_sig <= '1';	-- Load the data from memory into the register file
+			if ( mem_out_delay_freeze /= '1' ) then
+				regDst_sig 	 <= '0';	-- load address of RT into the register file to be written to
+				memToReg_sig <= '1'; 	-- set mux to allow data from memory into the register file
+				regWrite_sig <= '1';	-- Load the data from memory into the register file
+			end if;
+			
+			mem_out_delay_freeze <= '0'; -- reset the freeze signal so the load can work correctly next iteration
 				
 			-- STATE HANDLING		
 			next_state <= S_FETCH;

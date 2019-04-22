@@ -37,10 +37,12 @@ entity MIPS_DATAPATH is
 		regWrite	: in std_logic;
 		regDst		: in std_logic;
 		op_code		: out std_logic_vector(5 downto 0);
+		mem_out_delay : out std_logic; -- timing is different for inport vs sram
 		
 		-- non controller IO ------------------------------
 		clk			: in std_logic;
 		rst 		: in std_logic;
+		in_port_en 	: in std_logic;
 		in_port_sel : in std_logic;	-- select between port_in_0 and port_in_1
 		in_port 	: in std_logic_vector(WIDTH-1 downto 0);
 		out_port 	: out std_logic_vector(WIDTH-1 downto 0)
@@ -166,9 +168,11 @@ architecture STR of MIPS_DATAPATH is
 	signal mem_block_mem_out         : std_logic_vector(WIDTH-1 downto 0);
 	signal mem_block_mem_rd_en       : std_logic;
 	signal mem_block_mem_wr_en       : std_logic;
-	signal mem_block_user_in_port_en : std_logic;
+	signal mem_block_user_in_port_en : std_logic;		 -- select line
+	signal mem_block_user_in_port_wr_en : std_logic;	 -- in port en
 	signal mem_block_reg_b_data      : std_logic_vector(WIDTH-1 downto 0);
 	signal mem_block_out_port        : std_logic_vector(WIDTH-1 downto 0);
+	signal mem_block_mem_out_delay	 : std_logic;
 	
 	------------- MEMORY BLOCK MUX -----------------
 	signal mem_block_mux_sel    : std_logic;
@@ -438,8 +442,10 @@ begin
 			mem_rd_en       => mem_block_mem_rd_en,
 			mem_wr_en       => mem_block_mem_wr_en,
 			user_in_port_en => mem_block_user_in_port_en,
+			user_in_port_wr_en => mem_block_user_in_port_wr_en,
 			reg_b_data      => mem_block_reg_b_data,
-			out_port        => mem_block_out_port
+			out_port        => mem_block_out_port,
+			mem_out_delay 	=> mem_block_mem_out_delay
 		);
 		
 	U_MEMORY_BLOCK_MUX : entity work.mux_2x1
@@ -602,6 +608,7 @@ begin
 	mem_block_mem_rd_en		  <= memRead;
 	mem_block_user_in_port_en <= in_port_sel;
 	mem_block_in_port_data 	  <= in_port;
+	mem_block_user_in_port_wr_en 	<= in_port_en;
 	
 	-------------- MEMORY BLOCK MUX ----------------
 	mem_block_mux_sel 	<= IorD;
@@ -614,14 +621,16 @@ begin
 	branch_taken_reg_input   <= "0000000000000000000000000000000" & alu_branch_taken;
 	
 	---------------- RESET OUTPUTS -----------------
-	process(rst, mem_block_out_port, inst_reg_out_31_26)
+	process(rst, mem_block_out_port, inst_reg_out_31_26, mem_block_mem_out_delay)
 	begin
 		if (rst = '1') then
 			out_port <= (others => '0');
 			op_code  <= (others => '0');
+			mem_out_delay <= '0';
 		else
 			out_port <= mem_block_out_port;
 			op_code  <= inst_reg_out_31_26;
+			mem_out_delay <= mem_block_mem_out_delay;
 		end if;
 	end process;
 	

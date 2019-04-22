@@ -29,10 +29,12 @@ entity MEMORY_BLOCK is
 		in_port_data	: in std_logic_vector(WIDTH-1 downto 0);
 		mem_in			: in std_logic_vector(WIDTH-1 downto 0); -- only use 9 downto 2 for addressing
 		mem_out			: out std_logic_vector(WIDTH-1 downto 0);
+		mem_out_delay : out std_logic; -- timing is different for inport vs sram
 		
 		mem_rd_en		: in std_logic;
 		mem_wr_en		: in std_logic;		
 		user_in_port_en : in std_logic;
+		user_in_port_wr_en : in std_logic;
 		
 		-- OUTPUT NEW REGB DATA IF OUTPUT PORT ENABLED
 		reg_b_data	: in std_logic_vector(WIDTH-1 downto 0); -- data comes from register B		
@@ -65,7 +67,7 @@ begin
 		)
 		port map(
 			clk    => clk,
-			rst    => rst,
+			rst    => '0',
 			en     => in_port_en_n, -- on low input
 			input  => in_port_data,			-- only loaded into register on low select
 			output => port0_data
@@ -77,7 +79,7 @@ begin
 		)
 		port map(
 			clk    => clk,
-			rst    => rst,
+			rst    => '0',
 			en     => in_port_en,	-- on high select
 			input  => in_port_data,		-- only loaded into register on high select
 			output => port1_data
@@ -96,8 +98,8 @@ begin
 		);
 		
 	-- COMBIN. LOGIC -----------------------------------------------------------------
-	in_port_en 		<= user_in_port_en;
-	in_port_en_n 	<= not(user_in_port_en);
+	in_port_en 		<= (user_in_port_en and user_in_port_wr_en);
+	in_port_en_n 	<= (not(user_in_port_en) and user_in_port_wr_en);
 		
 	-- MEMORY IN WRITE HANDLING ------------------------------------------------------
 	process ( mem_in, mem_wr_en )
@@ -129,14 +131,17 @@ begin
 		-- "FFF8" = inport0 ( READ FROM THE INPORT )
 		if ( mem_rd_en = '1' and unsigned(mem_in) = unsigned(MEM_INPORT0) ) then
 			mem_out <= port0_data;
+			mem_out_delay <= '1';
 			
 		-- "FFFC" = inport1 ( READ FROM THE INPORT )
 		elsif ( mem_rd_en = '1' and unsigned(mem_in) = unsigned(MEM_INPORT1) ) then
 			mem_out <= port1_data;
+			mem_out_delay <= '1';
 			
 		-- "Address range 9 downto 2" = ( READ FROM THE SRAM )
 		elsif ( mem_rd_en = '1' ) then
 			mem_out <= sram_out;
+			mem_out_delay <= '0';
 			
 		end if;
 		

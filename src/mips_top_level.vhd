@@ -21,6 +21,7 @@ entity MIPS_TOP_LEVEL is
 		clk			: in std_logic;
 		rst			: in std_logic;
 		
+		in_port_en	: in std_logic;
 		in_port_sel : in std_logic;
 		in_port     : in std_logic_vector(WIDTH-1 downto 0);
 		out_port    : out std_logic_vector(WIDTH-1 downto 0)
@@ -48,9 +49,11 @@ architecture STR of MIPS_TOP_LEVEL is
 	signal datapath_op_code     : std_logic_vector(5 downto 0);
 	signal datapath_clk         : std_logic;
 	signal datapath_rst         : std_logic;
+	signal datapath_in_port_en	: std_logic;
 	signal datapath_in_port_sel : std_logic;
 	signal datapath_in_port     : std_logic_vector(WIDTH-1 downto 0);
 	signal datapath_out_port    : std_logic_vector(WIDTH-1 downto 0);
+	signal datapath_mem_out_delay : std_logic;
 	
 	-- CONTROLLER SIGNALS ----------------------------------------
 	signal controller_pcWrite     : std_logic;
@@ -71,6 +74,7 @@ architecture STR of MIPS_TOP_LEVEL is
 	signal controller_op_code     : std_logic_vector(5 downto 0);
 	signal controller_clk         : std_logic;
 	signal controller_rst         : std_logic;
+	signal controller_mem_out_delay : std_logic;
 
 begin
 	
@@ -97,9 +101,11 @@ begin
 			op_code     => datapath_op_code,
 			clk         => clk,
 			rst         => rst,
+			in_port_en  => datapath_in_port_en,
 			in_port_sel => datapath_in_port_sel,
 			in_port     => datapath_in_port,
-			out_port    => datapath_out_port
+			out_port    => datapath_out_port,
+			mem_out_delay => datapath_mem_out_delay
 		);
 		
 	U_CONTROLLER : entity work.MIPS_CONTROLLER
@@ -121,7 +127,8 @@ begin
 			aluSrcA     => controller_aluSrcA,
 			aluSrcB     => controller_aluSrcB,
 			regWrite    => controller_regWrite,
-			regDst      => controller_regDst
+			regDst      => controller_regDst,
+			mem_out_delay => controller_mem_out_delay
 		);
 		
 	-- SIGNAL CONNECTIONS ---------------------------------------------
@@ -143,9 +150,11 @@ begin
 	datapath_clk         <= controller_clk;        
 	datapath_rst         <= controller_rst;  
 	
-	controller_op_code   <= datapath_op_code;       
+	controller_op_code   <= datapath_op_code;   
+	controller_mem_out_delay <= datapath_mem_out_delay;    
 	
 	-- TOP LEVEL PORT CONNECTIONS -------------------------------------
+	datapath_in_port_en  <= in_port_en;
 	datapath_in_port_sel <= in_port_sel;
 	datapath_in_port     <= in_port;
 	out_port   		 	 <= datapath_out_port;
