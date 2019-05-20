@@ -4,8 +4,6 @@ Implementation of 32-bit CPU on MAX 10 FPGA using key instructions from the MIPS
 ## Datapath
 ![Datapath](https://user-images.githubusercontent.com/40513675/57999240-b3b84780-7aa2-11e9-925f-b70365c66d36.PNG)
 
-## Controller
-
 ## Selected MIPS32 Instructions
 ### R-Type
 ADDU (Add unsigned)
